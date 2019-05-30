@@ -4,18 +4,18 @@ import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+	selector: 'app-root',
+	templateUrl: './app.component.html',
+	styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'auth-test';
-  constructor(private oauthService: OAuthService, private router: Router){
-    this.configureAuth()
-  }
+	title = 'auth-test';
+	constructor(private oauthService: OAuthService, private router: Router) {
+		this.configureAuth();
+	}
 
-  configureAuth() {
-    console.log('config auth')
+	configureAuth() {
+
 		// build configuration
 		const authConfig: AuthConfig = {
 			issuer: environment.auth.issuer,
@@ -40,22 +40,14 @@ export class AppComponent {
 		this.oauthService.tokenValidationHandler = new NullValidationHandler();
 
 		// enable token silent refresh
-    this.oauthService.setupAutomaticSilentRefresh();
+		this.oauthService.setupAutomaticSilentRefresh();
 
 		// subscribe to events emitted by the auth service
 		this.oauthService.events.subscribe(e => {
 
 			switch (e.type) {
-				case "token_received": {
-
-          // redirect user to originally requested URL
-					var redirectUrl = this.oauthService.state || this.router.url;
-					this.router.navigate([this.oauthService.state]);
-
-					break;
-				}
 				case "token_error": {
-          console.log('token_error')
+
 					// cast event
 					const tokenError = <OAuthErrorEvent>e;
 
@@ -90,7 +82,7 @@ export class AppComponent {
 					}
 
 					// send user back to app for processing
-					this.router.navigate([environment.auth.onErrorRedirectUrl], {
+					this.router.navigate([environment.auth.redirectUri], {
 						queryParams: {
 							callbackUrl: redirectUrl,
 							errorCode: errorCode
