@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
 import { OAuthService } from 'angular-oauth2-oidc';
-import { environment } from '../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -14,25 +14,38 @@ export class AuthGuard implements CanActivate {
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
 
-    let loginPromise = this.oauthService.tryLogin().then(() => {
-      if (this.oauthService.hasValidAccessToken())
-        return true;
+    // validate authentication token
+    const loginPromise = this.oauthService.tryLogin()
+      .then(() => {
 
-      return this.redirectToLogin(next, state);
+        // did B2C confirm its validity?
+        if (this.oauthService.hasValidAccessToken())
+          
+          // accept request
+          return true;
+        
+        // request authentication
+        this.redirectToProviderLogin(next, state);
+        return false;
+      })
+      .catch(() => {
 
-    }).catch((e) => {
-      console.error(e);
-      return this.redirectToLogin(next, state);
-    });
+        // TODO: log error
 
+        // request authentication
+        this.redirectToProviderLogin(next, state);
+        return false;
+      });
+    
     return loginPromise;
   }
 
-  private redirectToLogin(next: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-    const callbackUrl = next.queryParams['callbackUrl'] || state.url;
-    console.log('callbackUrl', callbackUrl)
-    this.oauthService.initImplicitFlow(callbackUrl);
+  private redirectToProviderLogin(next: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
 
-    return false;
+    // try to extract requested url, otherwise use current route
+    const callbackUrl = next.queryParams['callbackUrl'] || state.url;
+
+    // redirect to external provider login
+    this.oauthService.initImplicitFlow(callbackUrl);
   }
 }
